@@ -1,0 +1,13 @@
+{
+    "buildCommand": "quasar build",
+    "outputDirectory": "dist/spa",
+    "devCommand": "quasar dev",
+    "installCommand": "npm install",
+    "framework": null,
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ]
+}

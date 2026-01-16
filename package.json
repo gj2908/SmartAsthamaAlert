@@ -15,6 +15,7 @@
     "postinstall": "quasar prepare"
   },
   "dependencies": {
+    "@dataconnect/generated": "file:src/dataconnect-generated",
     "@quasar/extras": "^1.16.4",
     "axios": "^1.13.2",
     "quasar": "^2.16.0",

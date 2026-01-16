@@ -25,7 +25,9 @@
           <q-btn round flat dense icon="notifications_none" class="glass-btn-round">
             <q-badge color="red" floating rounded dot />
           </q-btn>
-          <q-btn round flat dense icon="settings" class="glass-btn-round" />
+          <q-btn round flat dense icon="settings" class="glass-btn-round" to="/settings">
+            <q-tooltip>Settings</q-tooltip>
+          </q-btn>
           <div class="user-profile q-ml-sm row items-center glass-pill">
             <q-avatar size="24px" class="bg-primary text-white">A</q-avatar>
             <span class="text-caption q-ml-sm q-mr-xs text-weight-medium">Admin</span>
@@ -78,6 +80,22 @@
             <q-item-section>
               <q-item-label>Simulation</q-item-label>
               <q-item-label caption class="text-grey-5">Test Controls</q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-item 
+            clickable 
+            v-ripple 
+            to="/settings" 
+            active-class="active-menu-item"
+            class="menu-item q-mb-sm"
+          >
+            <q-item-section avatar>
+              <q-icon name="contact_phone" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Emergency Contacts</q-item-label>
+              <q-item-label caption class="text-grey-5">Settings</q-item-label>
             </q-item-section>
           </q-item>
 

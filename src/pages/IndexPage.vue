@@ -510,6 +510,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref as dbRef, onValue, off, query, limitToLast } from 'firebase/database';
 import { getAnalytics } from 'firebase/analytics';
+import { useEmergencyContacts } from '../composables/useEmergencyContacts';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -559,6 +560,9 @@ const dateFilter = ref('');
 const timeFilterStart = ref('');
 const timeFilterEnd = ref('');
 const arduinoIP = "http://192.168.1.15"; // Update with your Arduino IP
+
+// Emergency Contacts
+const { triggerEmergencyProtocol, hasContacts } = useEmergencyContacts();
 
 const historyColumns = [
   { name: 'timestamp', label: 'Time', field: 'timestamp', align: 'left', sortable: true },
@@ -692,6 +696,44 @@ const sendFallNotification = () => {
     icon: 'warning',
     color: 'red-9'
   });
+  
+  // Trigger Emergency Contact Protocol
+  console.log('Triggering emergency contact protocol...');
+  setTimeout(async () => {
+    try {
+      const result = await triggerEmergencyProtocol();
+      console.log('Emergency protocol result:', result);
+      
+      if (result.success && result.actions.length > 0) {
+        window.$q?.notify({
+          type: 'info',
+          message: '📞 Emergency Protocol Activated',
+          caption: result.message,
+          position: 'bottom',
+          timeout: 8000,
+          icon: 'phone',
+          color: 'blue-9'
+        });
+      } else if (!hasContacts.value) {
+        window.$q?.notify({
+          type: 'warning',
+          message: 'No emergency contacts configured',
+          caption: 'Add contacts in Settings to enable auto-call/SMS',
+          position: 'bottom',
+          timeout: 5000,
+          icon: 'person_add',
+          color: 'orange-9',
+          actions: [
+            { label: 'Settings', color: 'white', handler: () => {
+              window.location.href = '/settings';
+            }}
+          ]
+        });
+      }
+    } catch (error) {
+      console.error('Emergency protocol error:', error);
+    }
+  }, 500);
   
   console.log('✓ All notification channels triggered');
 };
