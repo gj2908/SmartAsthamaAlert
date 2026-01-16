@@ -67,21 +67,6 @@
             </q-item-section>
           </q-item>
 
-          <q-item 
-            clickable 
-            v-ripple 
-            to="/test" 
-            active-class="active-menu-item"
-            class="menu-item q-mb-sm"
-          >
-            <q-item-section avatar>
-              <q-icon name="tune" />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label>Simulation</q-item-label>
-              <q-item-label caption class="text-grey-5">Test Controls</q-item-label>
-            </q-item-section>
-          </q-item>
 
           <q-item 
             clickable 

@@ -206,7 +206,7 @@
 import { ref, onMounted } from 'vue';
 import { useEmergencyContacts } from '../composables/useEmergencyContacts';
 import { useQuasar } from 'quasar';
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getDatabase, ref as dbRef, onValue, query, limitToLast } from 'firebase/database';
 
 const $q = useQuasar();
@@ -241,13 +241,15 @@ const deviceInfo = ref({ ip: '--', lastSync: '--' });
 const publicIP = ref('Detecting...');
 const fallRecords = ref([]);
 
+let database = null;
+
 onMounted(() => {
   try {
-    const app = initializeApp(firebaseConfig);
-    const database = getDatabase(app);
+    const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    database = getDatabase(app);
     
     // Listen for device info
-    onValue(dbRef(database, '/sensor_data'), (snapshot) => {
+    onValue(dbRef(database, 'sensor_data'), (snapshot) => {
       const data = snapshot.val();
       if (data) {
         isConnected.value = true;
@@ -280,21 +282,35 @@ onMounted(() => {
 });
 
 const sendDeviceCommand = async (command) => {
+  console.log(`Sending command to device: ${command}`);
   try {
-    const response = await fetch(`${firebaseConfig.databaseURL}/sensor_data/commands.json`, {
+    // Reverting to manual REST PUT to ensure 100% compatibility with Arduino's manual HTTP parser
+    const url = `${firebaseConfig.databaseURL}/sensor_data/commands.json`;
+    const response = await fetch(url, {
       method: "PUT",
       headers: { 'Content-Type': 'application/json' },
-      body: `"${command}"`
+      body: JSON.stringify(command)
     });
+    
     if (response.ok) {
       $q.notify({
         type: 'positive',
         message: `Command sent: ${command.toUpperCase()}`,
-        position: 'top'
+        caption: 'Device should respond in < 5s',
+        position: 'top',
+        icon: 'send'
       });
+    } else {
+      throw new Error(`HTTP Error: ${response.status}`);
     }
   } catch (error) {
     console.error('Command failed:', error);
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to send command. Check connection.',
+      position: 'top',
+      icon: 'error'
+    });
   }
 };
 

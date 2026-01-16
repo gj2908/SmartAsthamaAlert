@@ -186,25 +186,28 @@ void checkWebCommands() {
         if (line == "\r") { foundData = true; break; }
       }
       
+      String cmd = "";
       if (foundData && client.available()) {
-        String cmd = client.readStringUntil('\n');
+        cmd = client.readStringUntil('\n');
         cmd.replace("\"", ""); // Remove quotes
         cmd.trim();
-        
-        if (cmd == "restart") {
-          Serial.println("🔄 REMOTE RESTART REQUESTED...");
-          sendToFirebase("DELETE", "/sensor_data/commands.json", ""); // Clear command
-          delay(1000);
-          NVIC_SystemReset(); // Reboot Arduino R4
-        } 
-        else if (cmd == "recalibrate") {
-          Serial.println("⚖️ RECALIBRATING SENSORS...");
-          Wire.beginTransmission(MPU_ADDR);
-          Wire.write(0x6B); Wire.write(0); Wire.endTransmission(true);
-          sendToFirebase("DELETE", "/sensor_data/commands.json", ""); // Clear command
-        }
       }
+      
+      // CRITICAL FIX: Close connection BEFORE processing command to avoid socket conflict
       client.stop();
+
+      if (cmd == "restart") {
+        Serial.println("🔄 REMOTE RESTART REQUESTED...");
+        sendToFirebase("DELETE", "/sensor_data/commands.json", ""); // Clear command
+        delay(1000);
+        NVIC_SystemReset(); // Reboot Arduino R4
+      } 
+      else if (cmd == "recalibrate") {
+        Serial.println("⚖️ RECALIBRATING SENSORS...");
+        Wire.beginTransmission(MPU_ADDR);
+        Wire.write(0x6B); Wire.write(0); Wire.endTransmission(true);
+        sendToFirebase("DELETE", "/sensor_data/commands.json", ""); // Clear command
+      }
     }
   }
 }
