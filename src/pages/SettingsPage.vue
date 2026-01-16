@@ -8,14 +8,13 @@
         Settings
       </div>
 
-      <div class="row justify-center">
-        <div class="col-12 col-md-8">
-          
+      <div class="row q-col-gutter-lg justify-center">
+        <div class="col-12 col-md-6">
           <!-- Emergency Contacts Section -->
-          <div class="glass-card q-mb-md">
+          <div class="glass-card q-mb-lg full-height">
             <div class="card-header q-mb-md">
               <q-icon name="contact_phone" size="28px" color="red-6" />
-              <span class="text-h6 q-ml-sm text-white">Emergency Contacts</span>
+              <span class="text-subtitle1 q-ml-sm text-white text-weight-bold">Emergency Contacts</span>
             </div>
 
             <!-- Contact List -->
@@ -23,115 +22,126 @@
               <q-list dark separator>
                 <q-item v-for="contact in contacts" :key="contact.id" class="contact-item">
                   <q-item-section avatar>
-                    <q-avatar :color="contact.priority === 'primary' ? 'red-6' : 'blue-6'" text-color="white">
-                      <q-icon name="person" />
+                    <q-avatar :color="contact.priority === 'primary' ? 'red-6' : 'blue-6'" text-color="white" size="32px">
+                      <q-icon name="person" size="18px" />
                     </q-avatar>
                   </q-item-section>
 
                   <q-item-section>
-                    <q-item-label class="text-white text-weight-bold">
+                    <q-item-label class="text-white text-weight-medium">
                       {{ contact.name }}
-                      <q-badge v-if="contact.priority === 'primary'" color="red" class="q-ml-sm">PRIMARY</q-badge>
+                      <q-badge v-if="contact.priority === 'primary'" color="red-9" size="xs" class="q-ml-sm">PRIME</q-badge>
                     </q-item-label>
-                    <q-item-label caption class="text-grey-4">
-                      {{ contact.phone }} • {{ contact.relationship }}
+                    <q-item-label caption class="text-grey-5" style="font-size: 0.75rem">
+                      {{ contact.phone }}
                     </q-item-label>
                   </q-item-section>
 
                   <q-item-section side>
                     <div class="row q-gutter-xs">
-                      <q-btn flat dense round icon="call" color="green" size="sm" @click="testCall(contact)">
-                        <q-tooltip>Test Call</q-tooltip>
-                      </q-btn>
-                      <q-btn flat dense round icon="message" color="blue" size="sm" @click="testSMS(contact)">
-                        <q-tooltip>Test SMS</q-tooltip>
-                      </q-btn>
-                      <q-btn flat dense round icon="edit" color="orange" size="sm" @click="editContact(contact)">
-                        <q-tooltip>Edit</q-tooltip>
-                      </q-btn>
-                      <q-btn flat dense round icon="delete" color="red" size="sm" @click="confirmDelete(contact)">
-                        <q-tooltip>Delete</q-tooltip>
-                      </q-btn>
+                      <q-btn flat dense round icon="call" color="green-4" size="sm" @click="testCall(contact)" />
+                      <q-btn flat dense round icon="message" color="blue-4" size="sm" @click="testSMS(contact)" />
+                      <q-btn flat dense round icon="edit" color="orange-4" size="sm" @click="editContact(contact)" />
+                      <q-btn flat dense round icon="delete" color="red-4" size="sm" @click="confirmDelete(contact)" />
                     </div>
                   </q-item-section>
                 </q-item>
               </q-list>
             </div>
 
-            <div v-else class="text-center q-pa-md">
-              <q-icon name="person_add" size="64px" color="grey-6" />
-              <div class="text-grey-5 q-mt-sm">No emergency contacts added yet</div>
+            <div v-else class="text-center q-pa-lg">
+              <q-icon name="person_add" size="48px" color="grey-7" />
+              <div class="text-grey-6 q-mt-sm">No emergency contacts</div>
             </div>
 
-            <!-- Add Contact Button -->
-            <q-btn 
-              color="primary" 
-              icon="add" 
-              label="Add Emergency Contact" 
-              class="full-width"
-              @click="showAddDialog = true"
-            />
-          </div>
-
-          <!-- Emergency Settings -->
-          <div class="glass-card q-mb-md">
-            <div class="card-header q-mb-md">
-              <q-icon name="tune" size="28px" color="purple-6" />
-              <span class="text-h6 q-ml-sm text-white">Emergency Settings</span>
-            </div>
-
-            <div class="q-gutter-md">
-              <q-toggle
-                v-model="settings.autoCall"
-                @update:model-value="saveSettings"
-                label="Auto-call primary contact on fall detection"
-                color="green"
-                dark
-              />
-
-              <q-toggle
-                v-model="settings.autoSMS"
-                @update:model-value="saveSettings"
-                label="Auto-send SMS to all contacts"
-                color="blue"
-                dark
-              />
-
-              <q-toggle
-                v-model="settings.requireConfirmation"
-                @update:model-value="saveSettings"
-                label="Require confirmation before calling"
-                color="orange"
-                dark
-              />
-
-              <q-input
-                v-model="settings.customMessage"
-                @blur="saveSettings"
-                label="Custom Emergency Message"
-                type="textarea"
-                rows="3"
-                dark
-                filled
-                hint="Leave blank to use default message"
-              />
-            </div>
-          </div>
-
-          <!-- Back Button -->
-          <div class="text-center q-mt-xl">
-            <q-btn 
-              to="/" 
-              color="white" 
-              text-color="primary" 
-              label="Back to Dashboard" 
-              rounded 
-              size="lg" 
-              icon="dashboard"
-              class="glass-btn"
-            />
+            <q-btn outline color="primary" icon="add" label="Add New Contact" class="full-width q-mt-md" @click="showAddDialog = true" />
           </div>
         </div>
+
+        <div class="col-12 col-md-6">
+          <!-- Emergency Settings -->
+          <div class="glass-card q-mb-lg">
+            <div class="card-header q-mb-md">
+              <q-icon name="tune" size="28px" color="purple-6" />
+              <span class="text-subtitle1 q-ml-sm text-white text-weight-bold">Response Protocol</span>
+            </div>
+
+            <div class="q-gutter-sm">
+              <q-toggle v-model="settings.autoCall" @update:model-value="saveSettings" label="Auto-call on fall detection" color="green-4" dark dense />
+              <q-toggle v-model="settings.autoSMS" @update:model-value="saveSettings" label="Auto-send SMS alert" color="blue-4" dark dense />
+              <q-toggle v-model="settings.requireConfirmation" @update:model-value="saveSettings" label="Pre-call confirmation" color="orange-4" dark dense />
+              
+              <q-input v-model="settings.customMessage" @blur="saveSettings" label="Custom SOS Message" type="textarea" rows="2" dark filled dense class="q-mt-sm" />
+            </div>
+          </div>
+
+          <!-- Hardware Diagnostics -->
+          <div class="glass-card">
+            <div class="card-header q-mb-md">
+              <q-icon name="developer_board" size="28px" color="blue-6" />
+              <span class="text-subtitle1 q-ml-sm text-white text-weight-bold">Hardware & System</span>
+              <q-space />
+              <q-badge :color="isConnected ? 'green-9' : 'red-9'" rounded class="q-px-sm">
+                {{ isConnected ? 'ONLINE' : 'OFFLINE' }}
+              </q-badge>
+            </div>
+
+            <div class="row q-col-gutter-sm q-mb-md">
+              <div class="col-4">
+                <div class="diag-item q-pa-sm rounded-borders bg-dark-glass text-center">
+                  <div class="text-caption text-grey-5" style="font-size: 0.65rem">Internal IP</div>
+                  <div class="text-body2 text-white text-weight-bold" style="font-size: 0.75rem">{{ deviceInfo.ip }}</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="diag-item q-pa-sm rounded-borders bg-dark-glass text-center">
+                  <div class="text-caption text-grey-5" style="font-size: 0.65rem">Public IP</div>
+                  <div class="text-body2 text-blue-4 text-weight-bold" style="font-size: 0.75rem">{{ publicIP }}</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="diag-item q-pa-sm rounded-borders bg-dark-glass text-center">
+                  <div class="text-caption text-grey-5" style="font-size: 0.65rem">Sync</div>
+                  <div class="text-body2 text-white text-weight-bold" style="font-size: 0.75rem">{{ deviceInfo.lastSync }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row q-gutter-sm q-mb-md">
+              <q-btn outline color="orange-5" dense icon="refresh" label="Restart Device" class="col" @click="sendDeviceCommand('restart')" />
+              <q-btn outline color="blue-5" dense icon="straighten" label="Calibrate Sensors" class="col" @click="sendDeviceCommand('recalibrate')" />
+            </div>
+
+            <q-expansion-item
+              dark
+              dense
+              icon="history"
+              label="Recent Fall Logs"
+              header-class="text-grey-4"
+              class="bg-dark-glass rounded-borders"
+            >
+              <div class="q-pa-sm">
+                <q-list dark dense separator v-if="fallRecords.length > 0">
+                  <q-item v-for="record in fallRecords" :key="record.id" dense class="q-px-none">
+                    <q-item-section>
+                      <q-item-label class="text-caption text-grey-3">
+                        {{ new Date(record.timestamp).toLocaleString() }}
+                      </q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-badge color="red-9" label="FALL" size="xs" />
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+                <div v-else class="text-center text-grey-6 italic text-caption">No incidents recorded</div>
+              </div>
+            </q-expansion-item>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center q-mt-xl">
+        <q-btn to="/" flat color="grey-5" label="Return to Dashboard" icon="arrow_back" />
       </div>
     </div>
 
@@ -193,9 +203,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useEmergencyContacts } from '../composables/useEmergencyContacts';
 import { useQuasar } from 'quasar';
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref as dbRef, onValue, query, limitToLast } from 'firebase/database';
 
 const $q = useQuasar();
 
@@ -211,6 +223,80 @@ const {
   makeEmergencyCall,
   sendEmergencySMS
 } = useEmergencyContacts();
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAdm0xR-NodxwUxtg2pY5QCgKd-hTTSKtY",
+  authDomain: "sms2-ed4fb.firebaseapp.com",
+  databaseURL: "https://sms2-ed4fb-default-rtdb.firebaseio.com",
+  projectId: "sms2-ed4fb",
+  storageBucket: "sms2-ed4fb.firebasestorage.app",
+  messagingSenderId: "346913199350",
+  appId: "1:346913199350:web:2f6db152dfa0ddd731c8d7",
+  measurementId: "G-838BYV1HZ6"
+};
+
+// Device States
+const isConnected = ref(false);
+const deviceInfo = ref({ ip: '--', lastSync: '--' });
+const publicIP = ref('Detecting...');
+const fallRecords = ref([]);
+
+onMounted(() => {
+  try {
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    
+    // Listen for device info
+    onValue(dbRef(database, '/sensor_data'), (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        isConnected.value = true;
+        if (data.device_ip) deviceInfo.value.ip = data.device_ip;
+        deviceInfo.value.lastSync = new Date().toLocaleTimeString();
+      }
+    });
+
+    // Listen for Fall Records
+    const fallRecRef = query(dbRef(database, 'fall_records'), limitToLast(5));
+    onValue(fallRecRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        fallRecords.value = Object.keys(data).map(key => ({
+          id: key,
+          ...data[key]
+        })).reverse();
+      }
+    });
+    
+    // Fetch Public IP
+    fetch('https://api.ipify.org?format=json')
+      .then(r => r.json())
+      .then(data => publicIP.value = data.ip)
+      .catch(() => publicIP.value = 'Failed');
+
+  } catch (err) {
+    console.error('Firebase error in Settings:', err);
+  }
+});
+
+const sendDeviceCommand = async (command) => {
+  try {
+    const response = await fetch(`${firebaseConfig.databaseURL}/sensor_data/commands.json`, {
+      method: "PUT",
+      headers: { 'Content-Type': 'application/json' },
+      body: `"${command}"`
+    });
+    if (response.ok) {
+      $q.notify({
+        type: 'positive',
+        message: `Command sent: ${command.toUpperCase()}`,
+        position: 'top'
+      });
+    }
+  } catch (error) {
+    console.error('Command failed:', error);
+  }
+};
 
 const showAddDialog = ref(false);
 const editingContact = ref(null);
@@ -361,29 +447,32 @@ const testSMS = (contact) => {
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 24px;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(15px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
 .card-header {
   display: flex;
   align-items: center;
-  padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .contact-item {
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
   margin-bottom: 8px;
+  padding: 8px;
 }
 
-.glass-btn {
-  backdrop-filter: blur(5px);
-  background: rgba(255, 255, 255, 0.9) !important;
+.bg-dark-glass {
+  background: rgba(0, 0, 0, 0.2);
 }
+
+.min-width-auto { min-width: auto !important; }
+.min-height-auto { min-height: auto !important; }
 </style>

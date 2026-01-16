@@ -37,6 +37,19 @@
             <q-icon :name="isConnected ? 'wifi' : 'wifi_off'" size="12px" class="q-mr-xs" />
             {{ isConnected ? 'Live' : 'Offline' }}
           </q-badge>
+
+          <!-- Profile / Battery / Sync -->
+          <div class="row items-center q-ml-sm q-gutter-xs status-indicators">
+            <q-icon name="battery_charging_full" color="green-4" size="14px">
+              <q-tooltip>Device Battery: 88%</q-tooltip>
+            </q-icon>
+            <q-icon :name="isConnected ? 'sync' : 'sync_disabled'" :class="isConnected ? 'rotate' : ''" color="grey-4" size="14px">
+              <q-tooltip>{{ isConnected ? 'Synchronized' : 'Sync Paused' }}</q-tooltip>
+            </q-icon>
+            <q-avatar size="24px" class="q-ml-xs cursor-pointer profile-avatar">
+              <img src="https://cdn.quasar.dev/img/avatar.png">
+            </q-avatar>
+          </div>
         </div>
       </div>
 
@@ -90,7 +103,7 @@
 
       <div class="row q-col-gutter-md">
         <!-- Vitals Column -->
-        <div class="col-12 col-md-8">
+        <div class="col-12">
           <div class="row q-col-gutter-md">
             
             <!-- Heart Rate Card -->
@@ -106,14 +119,15 @@
                 <div class="card-main">
                   <div class="metric-value">
                     {{ sensorData.BPM }}
-                    <span class="metric-unit"></span>
+                    <span class="metric-unit">bpm</span>
                   </div>
-                  <div class="visualizer">
-                    <div 
-                      class="heart-dot"
-                      :style="{ animationDuration: (60 / Math.max(sensorData.BPM, 40)) + 's' }"
-                    ></div>
-                    <div class="heart-waveform"></div>
+                  <!-- Real-time Sparkline -->
+                  <div class="sparkline-container">
+                    <VueApexCharts
+                      height="60"
+                      :options="sparklineOptions('#ef4444')"
+                      :series="[{ name: 'BPM', data: bpmBuffer }]"
+                    />
                   </div>
                 </div>
 
@@ -141,8 +155,13 @@
                     {{ sensorData.SpO2 }}
                     <span class="metric-unit">%</span>
                   </div>
-                  <div class="progress-bar-container">
-                    <div class="progress-bar" :style="{ width: sensorData.SpO2 + '%' }"></div>
+                  <!-- Real-time Sparkline -->
+                  <div class="sparkline-container">
+                    <VueApexCharts
+                      height="60"
+                      :options="sparklineOptions('#3b82f6')"
+                      :series="[{ name: 'SpO2', data: spo2Buffer }]"
+                    />
                   </div>
                 </div>
 
@@ -155,37 +174,97 @@
               </div>
             </div>
 
+            <!-- Pedometer (Steps) Card -->
+            <div class="col-12 col-sm-6">
+              <div class="pro-card vitals-card steps-card shadow-lg">
+                <div class="card-top q-mb-sm">
+                  <div class="icon-box bg-green-grad">
+                    <q-icon name="directions_walk" size="xs" />
+                  </div>
+                  <div class="text-caption text-grey-4 text-weight-bold uppercase">Activity Level</div>
+                </div>
+                
+                <div class="card-main">
+                  <div class="metric-value">
+                    {{ sensorData.Steps }}
+                    <span class="metric-unit">steps</span>
+                  </div>
+                  <div class="progress-bar-container">
+                    <div class="progress-bar bg-green-4" :style="{ width: Math.min((sensorData.Steps / 6000) * 100, 100) + '%' }"></div>
+                  </div>
+                  <div class="text-caption text-grey-5 q-mt-xs">Goal: 6,000 steps</div>
+                </div>
+
+                <div class="card-footer q-mt-sm q-pt-sm">
+                   <span class="text-green-4">{{ Math.round((sensorData.Steps / 6000) * 100) }}% Complete</span>
+                   <span class="text-grey-5 text-caption float-right">Pedometer</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fall Detection Status Card -->
+            <div class="col-12 col-sm-6">
+              <div class="pro-card vitals-card status-card" :class="sensorData.Fall_Status ? 'bg-red-dim-2 border-red' : ''">
+                <div class="card-top q-mb-sm">
+                  <div class="icon-box" :class="sensorData.Fall_Status ? 'bg-red-grad' : 'bg-green-grad'">
+                    <q-icon :name="sensorData.Fall_Status ? 'warning' : 'check_circle'" size="xs" />
+                  </div>
+                  <div class="text-caption text-grey-4 text-weight-bold uppercase">Safety Status</div>
+                </div>
+                
+                <div class="card-main flex column items-center justify-center" style="min-height: 80px;">
+                  <div :class="sensorData.Fall_Status ? 'text-red-4 scale-up' : 'text-green-4'" class="text-h6 text-weight-bold text-center">
+                    {{ sensorData.Fall_Status ? 'FALL DETECTED!' : 'All Systems Nominal' }}
+                  </div>
+                  <div v-if="sensorData.Fall_Status" class="text-caption text-white q-mt-xs blink">
+                    EMERGENCY ALERT ACTIVE
+                  </div>
+                  <div v-else class="text-caption text-grey-5 q-mt-xs">
+                    Monitoring for impacts...
+                  </div>
+                </div>
+
+                <div class="card-footer q-mt-sm q-pt-sm">
+                   <span :class="sensorData.Fall_Status ? 'text-red-4' : 'text-grey-5'">
+                     {{ sensorData.Fall_Status ? 'Active Alert' : 'Standby' }}
+                   </span>
+                   <span class="text-grey-5 text-caption float-right">Fall Detection</span>
+                </div>
+              </div>
+            </div>
+
             <!-- Environmental & Location Card -->
             <div class="col-12">
               <div class="pro-card aqi-card">
                 <div class="row items-center">
                   <!-- Sensor/Indoor AQI -->
-                  <div class="col-12 col-md-6 q-pa-sm text-center border-right">
-                    <div class="text-caption text-grey-4 q-mb-xs">INDOOR AQI</div>
-                    <q-circular-progress
-                      show-value
-                      :value="sensorData.AQI"
-                      :max="500"
-                      size="100px"
-                      :thickness="0.15"
-                      :color="getAQIColor(sensorData.AQI)"
-                      track-color="transparent"
-                      center-color="rgba(255,255,255,0.05)"
-                      class="q-ma-sm"
-                    >
-                      <div class="column items-center">
-                        <span class="text-h4 text-weight-light">{{ sensorData.AQI }}</span>
-                      </div>
-                    </q-circular-progress>
-                    <div class="text-subtitle2" :class="'text-' + getAQIColor(sensorData.AQI)">
-                      {{ getAQIStatus(sensorData.AQI) }}
-                      <q-tooltip class="bg-dark text-body2" :offset="[0, 10]">
-                        {{ getAQIDescription(sensorData.AQI) }}
-                      </q-tooltip>
+                  <div class="col-12 col-md-6 q-pa-sm text-center border-right relative-position">
+                    <div class="text-caption text-grey-4 q-mb-xs">
+                      INDOOR AQI
+                      <q-icon name="info" size="xs" class="q-ml-xs cursor-pointer">
+                        <q-tooltip class="bg-dark text-body2" style="max-width: 200px">
+                          {{ getAQIDescription(sensorData.AQI) }}
+                        </q-tooltip>
+                      </q-icon>
                     </div>
-                    <div class="q-mt-xs text-center">
-                      <span class="text-h6 text-weight-bold text-white">{{ sensorData.AQI }}</span>
-                      <span class="text-caption text-grey-5 q-ml-xs">AQI</span>
+                    
+                    <div class="row items-center justify-center">
+                      <div class="text-h2 text-weight-bold text-white q-mr-sm">{{ sensorData.AQI }}</div>
+                      <div class="column items-start">
+                        <q-badge :color="getAQIColor(sensorData.AQI)" rounded class="q-px-sm text-weight-bold">
+                          {{ getAQIStatus(sensorData.AQI) }}
+                        </q-badge>
+                        <span class="text-caption text-grey-5">Points</span>
+                      </div>
+                    </div>
+
+                    <!-- Small Sparkline below value -->
+                    <div class="q-mt-sm" style="height: 40px; margin-bottom: -10px;">
+                      <VueApexCharts
+                        height="40"
+                        :options="sparklineOptions('#10b981')"
+                        :series="[{ name: 'AQI', data: aqiBuffer }]"
+                      />
                     </div>
                   </div>
 
@@ -256,6 +335,74 @@
                 </div>
               </div>
             </div>
+
+            <!-- Premium Historical Analytics Section -->
+            <div class="col-12 q-mt-md">
+              <div class="pro-card analytics-card">
+                <div class="row items-center justify-between q-mb-lg">
+                  <div class="row items-center">
+                    <div class="icon-box bg-purple-grad q-mr-sm">
+                      <q-icon name="insights" size="xs" />
+                    </div>
+                    <div>
+                      <div class="text-h6 text-white text-weight-bold">Health Trends</div>
+                      <div class="text-caption text-grey-5">Analysis & Patterns</div>
+                    </div>
+                  </div>
+                  
+                  <q-btn-toggle
+                    v-model="selectedTimeframe"
+                    flat
+                    toggle-color="primary"
+                    color="grey-6"
+                    size="sm"
+                    class="glass-toggle"
+                    :options="[
+                      {label: 'Day', value: 'Day'},
+                      {label: 'Week', value: 'Week'},
+                      {label: 'Month', value: 'Month'}
+                    ]"
+                    @update:model-value="fetchHistoricalAnalytics"
+                  />
+                </div>
+
+                <!-- Main Analytics Chart -->
+                <div class="analytics-chart-wrapper">
+                  <VueApexCharts
+                    height="300"
+                    :options="mainChartOptions"
+                    :series="[
+                      { name: 'Heart Rate', data: analyticsData.bpm },
+                      { name: 'SpO2', data: analyticsData.spo2 },
+                      { name: 'Indoor AQI', data: analyticsData.aqi }
+                    ]"
+                  />
+                </div>
+
+                <!-- Analytics Highlights -->
+                <div class="row q-col-gutter-sm q-mt-md">
+                  <div class="col-4">
+                    <div class="highlight-item">
+                      <div class="text-caption text-grey-5 text-uppercase">Avg BPM</div>
+                      <div class="text-h6 text-red-4">{{ getAverageValue(analyticsData.bpm) }}</div>
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div class="highlight-item">
+                      <div class="text-caption text-grey-5 text-uppercase">Min SpO2</div>
+                      <div class="text-h6 text-blue-4">{{ getMinSpO2(analyticsData.spo2) }}%</div>
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div class="highlight-item">
+                      <div class="text-caption text-grey-5 text-uppercase">Peak AQI</div>
+                      <div class="text-h6 text-green-4">{{ getMaxValue(analyticsData.aqi) }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Location Dialog and other modals remain here -->
 
             <q-dialog v-model="showLocationDialog">
               <div class="glass-dialog q-pa-md" style="min-width: 350px; max-width: 90vw;">
@@ -431,86 +578,18 @@
              </q-dialog>
            </div>
         </div>
-        <div class="col-12 col-md-4">
-          <div class="pro-card full-height column justify-between">
-            <div>
-              <div class="text-overline text-grey-5 q-mb-lg">DEVICE DIAGNOSTICS</div>
-              
-              <q-list dark padding separator>
-                <q-item>
-                  <q-item-section avatar>
-                    <q-icon name="memory" color="grey-5" />
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label>Sensor Status</q-item-label>
-                    <q-item-label caption class="text-grey-6">All systems nominal</q-item-label>
-                  </q-item-section>
-                  <q-item-section side>
-                    <q-icon name="check_circle" color="positive" size="xs" />
-                  </q-item-section>
-                </q-item>
-
-                <q-item>
-                  <q-item-section avatar>
-                    <q-icon name="access_time" color="grey-5" />
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label>Last Updated</q-item-label>
-                    <q-item-label caption class="text-grey-6">{{ lastUpdated }}</q-item-label>
-                  </q-item-section>
-                </q-item>
-
-                <q-item>
-                  <q-item-section avatar>
-                    <q-icon name="battery_full" color="grey-5" />
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label>Power Supply</q-item-label>
-                    <q-item-label caption class="text-grey-6">Mains Connected</q-item-label>
-                  </q-item-section>
-                </q-item>
-              </q-list>
-              
-              <!-- History & SD Card Actions -->
-              <div class="q-mt-md q-gutter-sm">
-                <q-btn 
-                  outline 
-                  color="blue-4" 
-                  icon="history" 
-                  label="View History" 
-                  size="sm"
-                  class="full-width"
-                  @click="showHistory = true"
-                />
-                <q-btn 
-                  outline 
-                  color="orange-4" 
-                  icon="sd_card" 
-                  label="SD Card Logs" 
-                  size="sm"
-                  class="full-width"
-                  @click="openSDCard"
-                />
-              </div>
-            </div>
-
-            <div class="q-mt-md text-center">
-              <div class="text-caption text-grey-7">Safety Monitor v1.0</div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
-
   </q-page>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref as dbRef, onValue, off, query, limitToLast } from 'firebase/database';
+import { getDatabase, ref as dbRef, onValue, off, query, limitToLast, get } from 'firebase/database';
 import { getAnalytics } from 'firebase/analytics';
 import { useEmergencyContacts } from '../composables/useEmergencyContacts';
+import VueApexCharts from 'vue3-apexcharts';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -524,16 +603,20 @@ const firebaseConfig = {
   measurementId: "G-838BYV1HZ6"
 };
 
-// Reactive data
+
+
+// Reactive State
+const isConnected = ref(false);
+const lastUpdated = ref('--');
 const sensorData = ref({
   AQI: 0,
   Fall_Status: false,
   BPM: 0,
-  SpO2: 0
+  SpO2: 0,
+  Steps: 0,
+  test_mode: false
 });
 
-const isConnected = ref(false);
-const lastUpdated = ref('Connecting...');
 const notificationPermission = ref('Notification' in window ? Notification.permission : 'denied');
 const locationData = ref({
   lat: null,
@@ -553,13 +636,60 @@ const isLoadingData = ref(true);
 const manualLat = ref('');
 const manualLng = ref('');
 
+// Dynamic Analytics State
+const selectedTimeframe = ref('Day'); // Day, Week, Month
+const analyticsData = ref({
+  bpm: [],
+  spo2: [],
+  aqi: [],
+  labels: []
+});
+
+// Real-time Sparkline Buffers (Last 30 points)
+const bpmBuffer = ref([]);
+const spo2Buffer = ref([]);
+const aqiBuffer = ref([]);
+
+// Chart Configurations
+const sparklineOptions = (color) => ({
+  chart: { sparkline: { enabled: true }, animations: { enabled: true, easing: 'smooth', speed: 800 } },
+  stroke: { curve: 'smooth', width: 2 },
+  fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.45, opacityTo: 0.05 } },
+  colors: [color],
+  tooltip: { enabled: false }
+});
+
+const mainChartOptions = computed(() => ({
+  chart: { 
+    type: 'area', 
+    toolbar: { show: false },
+    background: 'transparent',
+    foreColor: '#94a3b8'
+  },
+  colors: ['#ef4444', '#10b981', '#3b82f6'],
+  stroke: { curve: 'smooth', width: 3 },
+  fill: {
+    type: 'gradient',
+    gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0 }
+  },
+  xaxis: {
+    categories: analyticsData.value.labels,
+    labels: { rotate: -45, style: { fontSize: '10px' } },
+    axisBorder: { show: false },
+    axisTicks: { show: false }
+  },
+  yaxis: { show: false },
+  grid: { borderColor: 'rgba(255, 255, 255, 0.05)' },
+  dataLabels: { enabled: false },
+  tooltip: { theme: 'dark', x: { show: true } }
+}));
+
 // History Feature
 const historyList = ref([]);
 const showHistory = ref(false);
 const dateFilter = ref('');
 const timeFilterStart = ref('');
 const timeFilterEnd = ref('');
-const arduinoIP = "http://192.168.1.15"; // Update with your Arduino IP
 
 // Emergency Contacts
 const { triggerEmergencyProtocol, hasContacts } = useEmergencyContacts();
@@ -581,6 +711,7 @@ onMounted(() => {
   initFirebase();
   detectLocation();
   requestNotificationPermission();
+  fetchHistoricalAnalytics(); // Initial analytics fetch
 });
 
 // Notification System
@@ -774,8 +905,23 @@ const initFirebase = () => {
           Fall_Status: newFallStatus,
           BPM: data.BPM || 0,
           SpO2: data.SpO2 || 0,
+          Steps: data.Steps || 0,
           test_mode: data.test_mode || false
         };
+
+        // Update Real-time Sparkline Buffers
+
+        // Update Real-time Sparkline Buffers
+        bpmBuffer.value.push(data.BPM || 0);
+        spo2Buffer.value.push(data.SpO2 || 0);
+        aqiBuffer.value.push(data.AQI || 0);
+
+        // Keep last 30 points
+        if (bpmBuffer.value.length > 30) {
+          bpmBuffer.value.shift();
+          spo2Buffer.value.shift();
+          aqiBuffer.value.shift();
+        }
         
         // Trigger notification on fall detection (edge detection)
         if (newFallStatus && !previousFallStatus) {
@@ -808,7 +954,7 @@ const initFirebase = () => {
         })).reverse();
       }
     });
-    
+
   } catch (error) {
     console.error('Firebase initialization error:', error);
     isConnected.value = false;
@@ -824,9 +970,149 @@ onUnmounted(() => {
   }
 });
 
-// History Functions
-const openSDCard = () => {
-  window.open(arduinoIP, '_blank');
+// Analytics Logic
+const fetchHistoricalAnalytics = async () => {
+  console.log(`Fetching historical analytics for: ${selectedTimeframe.value}`);
+  try {
+    const histRef = dbRef(database, 'history');
+    const snapshot = await get(query(histRef, limitToLast(500)));
+    const data = snapshot.val();
+    
+    const rawHistory = data ? Object.values(data) : [];
+    
+    // Aggregate data into fixed time slots for a professional look
+    const aggregated = generateFixedTimeSlots(rawHistory, selectedTimeframe.value);
+    
+    analyticsData.value = {
+      bpm: aggregated.map(d => d.BPM),
+      spo2: aggregated.map(d => d.SpO2),
+      aqi: aggregated.map(d => d.AQI),
+      labels: aggregated.map(d => d.label)
+    };
+    
+  } catch (error) {
+    console.error('Error fetching analytics:', error);
+  }
+};
+
+const generateFixedTimeSlots = (data, timeframe) => {
+  const result = [];
+  const now = new Date();
+  
+  if (timeframe === 'Day') {
+    // Show every hour from 12 AM of the current day till the end of the day
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    for (let i = 0; i < 24; i++) {
+        const slotTime = new Date(startOfDay);
+        slotTime.setHours(i);
+        
+        // Find data for this hour slot (average it)
+        const hourData = data.filter(item => {
+            const itemDate = new Date(item.timestamp);
+            return itemDate.getFullYear() === slotTime.getFullYear() &&
+                   itemDate.getMonth() === slotTime.getMonth() &&
+                   itemDate.getDate() === slotTime.getDate() &&
+                   itemDate.getHours() === i;
+        });
+
+        const label = slotTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        if (hourData.length > 0) {
+            result.push({
+                BPM: Math.round(hourData.reduce((p, c) => p + c.BPM, 0) / hourData.length),
+                SpO2: Math.round(hourData.reduce((p, c) => p + c.SpO2, 0) / hourData.length),
+                AQI: Math.round(hourData.reduce((p, c) => p + c.AQI, 0) / hourData.length),
+                label: label
+            });
+        } else {
+            // Plot null so the graph remains clean for future/missing slots
+            result.push({ BPM: null, SpO2: null, AQI: null, label: label });
+        }
+    }
+  } else if (timeframe === 'Week') {
+    // Show all 7 days of the current week (Sunday to Saturday)
+    const currentDay = now.getDay();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - currentDay);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < 7; i++) {
+        const slotDate = new Date(startOfWeek);
+        slotDate.setDate(startOfWeek.getDate() + i);
+
+        const dayData = data.filter(item => {
+            const itemDate = new Date(item.timestamp);
+            return itemDate.getFullYear() === slotDate.getFullYear() &&
+                   itemDate.getMonth() === slotDate.getMonth() &&
+                   itemDate.getDate() === slotDate.getDate();
+        });
+
+        const label = slotDate.toLocaleDateString([], { weekday: 'short' });
+
+        if (dayData.length > 0) {
+            result.push({
+                BPM: Math.round(dayData.reduce((p, c) => p + c.BPM, 0) / dayData.length),
+                SpO2: Math.round(dayData.reduce((p, c) => p + c.SpO2, 0) / dayData.length),
+                AQI: Math.round(dayData.reduce((p, c) => p + c.AQI, 0) / dayData.length),
+                label: label
+            });
+        } else {
+            result.push({ BPM: null, SpO2: null, AQI: null, label: label });
+        }
+    }
+  } else if (timeframe === 'Month') {
+    // Show all days of the current month
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const totalDays = endOfMonth.getDate();
+
+    for (let i = 1; i <= totalDays; i++) {
+        const slotDate = new Date(now.getFullYear(), now.getMonth(), i);
+
+        const dayData = data.filter(item => {
+            const itemDate = new Date(item.timestamp);
+            return itemDate.getFullYear() === slotDate.getFullYear() &&
+                   itemDate.getMonth() === slotDate.getMonth() &&
+                   itemDate.getDate() === slotDate.getDate();
+        });
+
+        const label = slotDate.getDate().toString();
+
+        if (dayData.length > 0) {
+            result.push({
+                BPM: Math.round(dayData.reduce((p, c) => p + c.BPM, 0) / dayData.length),
+                SpO2: Math.round(dayData.reduce((p, c) => p + c.SpO2, 0) / dayData.length),
+                AQI: Math.round(dayData.reduce((p, c) => p + c.AQI, 0) / dayData.length),
+                label: label
+            });
+        } else {
+            result.push({ BPM: null, SpO2: null, AQI: null, label: label });
+        }
+    }
+  }
+  
+  return result;
+};
+
+// Analytics Helpers
+const getAverageValue = (arr) => {
+  const cleanArr = arr.filter(v => v !== null);
+  if (!cleanArr || cleanArr.length === 0) return '--';
+  const sum = cleanArr.reduce((a, b) => a + b, 0);
+  return Math.round(sum / cleanArr.length);
+};
+
+const getMaxValue = (arr) => {
+  const cleanArr = arr.filter(v => v !== null);
+  if (!cleanArr || cleanArr.length === 0) return '--';
+  return Math.max(...cleanArr);
+};
+
+const getMinSpO2 = (arr) => {
+  const cleanArr = arr.filter(v => v !== null);
+  if (!cleanArr || cleanArr.length === 0) return '--';
+  return Math.min(...cleanArr);
 };
 
 // Location & Weather Logic
@@ -1324,6 +1610,40 @@ const formatTime = (timestamp) => {
   margin-left: 2px;
 }
 
+.sparkline-container {
+  height: 60px;
+  margin: 0 -10px;
+  overflow: hidden;
+}
+
+/* Analytics Card Styles */
+.analytics-card {
+  padding: 24px;
+}
+
+.analytics-chart-wrapper {
+  margin: 0 -10px;
+}
+
+.highlight-item {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: center;
+}
+
+.glass-toggle {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.bg-purple-grad { 
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); 
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4); 
+}
+
 .card-footer {
   margin-top: 10px;
   padding-top: 15px;
@@ -1388,6 +1708,45 @@ const formatTime = (timestamp) => {
   align-items: center;
 }
 
+.bg-green-grad { background: linear-gradient(135deg, #10b981 0%, #059669 100%); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+.bg-red-grad { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+.bg-blue-grad { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+
+.log-container-scroll { max-height: 200px; overflow-y: auto; scrollbar-width: none; }
+.log-container-scroll::-webkit-scrollbar { display: none; }
+.log-item { background: rgba(255, 255, 255, 0.03); border-left: 3px solid #ef4444; border-radius: 4px; transition: all 0.3s ease; }
+.log-item:hover { background: rgba(255, 255, 255, 0.07); transform: translateX(5px); }
+
+.border-top { border-top: 1px solid rgba(255, 255, 255, 0.05); }
+.no-border-radius { border-radius: 8px !important; }
+
+.status-dot.online { background: #10b981; box-shadow: 0 0 8px #10b981; }
+
+.steps-card .metric-value { color: #10b981; }
+.steps-card .progress-bar { box-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
+
+.premium-btn { font-weight: 600; text-transform: none; letter-spacing: 0.5px; transition: all 0.3s ease; }
+.premium-btn:hover { background: rgba(255, 255, 255, 0.05); transform: translateY(-2px); }
+
+/* Compact Styles */
+.compact-card { padding: 12px !important; }
+.mini-icon { width: 28px !important; height: 28px !important; border-radius: 6px !important; }
+.compact-log-item { background: rgba(255, 255, 255, 0.02) !important; border-left-width: 2px !important; }
+.compact-premium-btn { 
+  font-size: 0.75rem !important; 
+  padding: 4px 8px !important; 
+  min-height: 32px !important; 
+  border-radius: 6px !important;
+  text-transform: none;
+  font-weight: 600;
+}
+.compact-premium-btn .q-icon { font-size: 14px !important; margin-right: 4px; }
+
+.sticky-side-column { position: sticky; top: 20px; }
+.min-width-auto { min-width: auto !important; }
+.min-height-auto { min-height: auto !important; }
+.compact-list .q-item { min-height: 28px; }
+
 .alert-icon-wrapper {
   background: rgba(220, 20, 60, 0.2);
   width: 48px;
@@ -1444,9 +1803,20 @@ const formatTime = (timestamp) => {
 }
 
 /* Dimmed Backgrounds for Alerts */
-.bg-red-dim { background: rgba(244, 67, 54, 0.2); border: 1px solid rgba(244, 67, 54, 0.3); }
-.bg-orange-dim { background: rgba(255, 152, 0, 0.2); border: 1px solid rgba(255, 152, 0, 0.3); }
-.bg-green-dim { background: rgba(76, 175, 80, 0.2); border: 1px solid rgba(76, 175, 80, 0.3); }
+.bg-red-dim { background: rgba(239, 68, 68, 0.1); }
+.bg-red-dim-2 { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); }
+.bg-green-dim { background: rgba(16, 185, 129, 0.1); }
+.bg-orange-dim { background: rgba(245, 158, 11, 0.1); }
+
+.border-red { border: 1px solid #ef4444 !important; }
+
+@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+.blink { animation: blink 1.5s infinite; }
+
+@keyframes scale-up { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+.scale-up { animation: scale-up 2s infinite ease-in-out; }
+
+.uppercase { text-transform: uppercase; letter-spacing: 0.5px; }
 
 /* ========== MODERN UI/UX ENHANCEMENTS ========== */
 
